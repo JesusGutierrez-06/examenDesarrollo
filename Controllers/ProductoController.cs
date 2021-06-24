@@ -2,6 +2,7 @@
 using examenDesarrollo.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,10 +12,10 @@ namespace examenDesarrollo.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsuarioController : ControllerBase
+    public class ProductoController : ControllerBase
     {
         private readonly AppDbContext _context;
-        public UsuarioController(AppDbContext context)
+        public ProductoController(AppDbContext context)
         {
             this._context = context;
         }
@@ -23,20 +24,20 @@ namespace examenDesarrollo.Controllers
         {
             try
             {
-                return Ok(_context.usuario.ToList());
+                return Ok(_context.producto.Include(e => e.usuario).ToList());
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
         }
-        [HttpGet("{id}", Name ="GetById")]
+        [HttpGet("{id}")]
         public ActionResult Get(int id)
         {
             try
             {
-                var usuario = _context.usuario.FirstOrDefault(e => e.id == id);
-                return Ok(usuario);
+                var articulo = _context.producto.Include(e => e.usuario).FirstOrDefault(e => e.id == id);
+                return Ok(articulo);
             }
             catch (Exception ex)
             {
@@ -44,19 +45,19 @@ namespace examenDesarrollo.Controllers
             }
         }
         [HttpPost]
-        public ActionResult Post([FromBody] Usuario usuario)
+        public ActionResult Post([FromBody] Producto producto)
         {
             try
             {
-                _context.Add(new Usuario { username = usuario.username, correo = usuario.correo, password = usuario.password, estado = usuario.estado });
+                var usuarios = _context.usuario.FirstOrDefault(t => t.id == producto.usuarioid);
+                _context.Add(new Producto { nombre = producto.nombre, usuario = usuarios, usuarioid = producto.usuarioid, precio = producto.precio, descripcion = producto.descripcion, marca = producto.marca, estado =producto.estado });
                 _context.SaveChanges();
-                return CreatedAtRoute("GetById", new { usuario.id }, usuario);
+                return CreatedAtRoute("GetById", new { producto.id }, producto);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
         }
-
     }
 }
